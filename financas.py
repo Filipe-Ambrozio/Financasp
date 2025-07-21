@@ -67,7 +67,7 @@ elif menu == "Resumo Mensal":
         df['ano_mes'] = df['data'].dt.to_period('M')
 
         mes_atual = datetime.today().strftime("%Y-%m")
-        meses = df['ano_mes'].drop_duplicates().astype(str).sort_values(ascending=False)
+        meses = df['ano_mes'].drop_duplicates().astype(str).sort_values()
         mes_escolhido = st.selectbox("Selecione o mês", meses, index=meses.tolist().index(mes_atual) if mes_atual in meses.tolist() else 0)
 
         df_mes = df[df['ano_mes'].astype(str) == mes_escolhido].copy()
@@ -76,7 +76,6 @@ elif menu == "Resumo Mensal":
         saldo = df_mes['valor'].sum()
         st.write(f"**Saldo no mês {mes_escolhido}: R$ {saldo:.2f}**")
 
-        # --- Débitos ---
         st.subheader("Débitos")
         modificou = False
         for i, row in df_mes.iterrows():
@@ -90,7 +89,6 @@ elif menu == "Resumo Mensal":
             salvar_dados(dados)
             st.success("Status de pagamento atualizado.")
 
-        # --- Créditos ---
         st.subheader("Créditos")
         indices_creditos = []
         for i, row in df_mes.iterrows():
@@ -105,7 +103,6 @@ elif menu == "Resumo Mensal":
                 st.success("Créditos excluídos com sucesso.")
                 st.experimental_rerun()
 
-        # --- Simulador ---
         sim = st.number_input("Simular crédito extra (R$)", min_value=0.0, format="%.2f")
         saldo_simulado = saldo + sim
         if saldo_simulado >= 0:
@@ -134,7 +131,7 @@ elif menu == "Consulta por Categoria":
             categoria = st.selectbox("Selecione a categoria", categorias)
 
             ano_atual = datetime.today().year
-            anos = sorted(df_debitos['ano'].unique(), reverse=True)
+            anos = sorted(df_debitos['ano'].unique())
             ano = st.selectbox("Ano", anos, index=anos.index(ano_atual) if ano_atual in anos else 0)
 
             meses_disponiveis = sorted(df_debitos[df_debitos['ano'] == ano]['mes'].unique())
@@ -179,41 +176,34 @@ elif menu == "Gráfico":
         df = pd.DataFrame(dados)
         df['data'] = pd.to_datetime(df['data'])
         df['ano'] = df['data'].dt.year
-        df['mes'] = df['data'].dt.strftime('%b')
+        df['mes'] = df['data'].dt.month
+        df['mes_nome'] = df['data'].dt.strftime('%b')
         df['ano_mes'] = df['data'].dt.to_period('M').astype(str)
 
-        # Gráfico 1: Saldo por mês no ano
+        meses_ordem = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+        mapa_meses = {i+1: nome for i, nome in enumerate(meses_ordem)}
+        df['mes_nome'] = df['mes'].map(mapa_meses)
+
         st.subheader("Saldo por Mês (Ano)")
-        ano_sel = st.selectbox("Selecione o ano", sorted(df['ano'].unique(), reverse=True), key="ano_graf")
+        anos_disponiveis = sorted(df['ano'].unique())
+        ano_atual = datetime.today().year
+        ano_sel = st.selectbox("Selecione o ano", anos_disponiveis, index=anos_disponiveis.index(ano_atual) if ano_atual in anos_disponiveis else 0, key="ano_graf")
+
         df_ano = df[df['ano'] == ano_sel]
-        saldo_mes = df_ano.groupby('mes')['valor'].sum().reindex(
-            ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-        ).fillna(0).reset_index(name="Saldo")
-        fig1 = px.bar(saldo_mes, x='mes', y='Saldo', text_auto='.2f', title=f"Saldo por Mês em {ano_sel}")
+        saldo_mes = df_ano.groupby('mes_nome')['valor'].sum().reindex(meses_ordem).fillna(0).reset_index(name="Saldo")
+        fig1 = px.bar(saldo_mes, x='mes_nome', y='Saldo', text_auto='.2f', title=f"Saldo por Mês em {ano_sel}")
         st.plotly_chart(fig1, use_container_width=True)
 
-        # Gráfico 2: Totais por Categoria por Mês
         st.subheader("Totais por Categoria (por Mês)")
         tipo = st.selectbox("Tipo", ["Débito", "Crédito"], key="tipo_graf")
         df_tipo = df[df['tipo'] == tipo]
         categorias = df_tipo['categoria'].unique()
         cat_sel = st.selectbox("Categoria", sorted(categorias))
         df_cat = df_tipo[df_tipo['categoria'] == cat_sel]
-        total_mes = df_cat.groupby('mes')['valor'].sum().reindex(
-            ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-        ).fillna(0).reset_index(name="Total")
-        fig2 = px.bar(total_mes, x='mes', y='Total', text_auto='.2f', title=f"{cat_sel} - {tipo} por Mês")
+        total_mes = df_cat.groupby('mes_nome')['valor'].sum().reindex(meses_ordem).fillna(0).reset_index(name="Total")
+        fig2 = px.bar(total_mes, x='mes_nome', y='Total', text_auto='.2f', title=f"{cat_sel} - {tipo} por Mês")
         st.plotly_chart(fig2, use_container_width=True)
     else:
         st.info("Nenhum dado cadastrado ainda.")
-
-
-
-
-
-
-#if __name__ == "__main__":
-    #main()
-
 
 #streamlit run financas.py
