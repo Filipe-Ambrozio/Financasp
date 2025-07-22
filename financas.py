@@ -130,15 +130,20 @@ elif menu == "Consulta por Categoria":
         else:
             categoria = st.selectbox("Selecione a categoria", categorias)
 
-            ano_atual = datetime.today().year
             anos = sorted(df_debitos['ano'].unique())
-            ano = st.selectbox("Ano", anos, index=anos.index(ano_atual) if ano_atual in anos else 0)
+            opcoes_ano = ["Todos os anos"] + anos
+            ano = st.selectbox("Ano", opcoes_ano, index=0)
 
-            meses_disponiveis = sorted(df_debitos[df_debitos['ano'] == ano]['mes'].unique())
+            if ano != "Todos os anos":
+                df_debitos = df_debitos[df_debitos['ano'] == ano]
+
+            meses_disponiveis = sorted(df_debitos['mes'].unique())
             opcoes_mes = ["Todos os meses"] + [str(m) for m in meses_disponiveis]
             mes_selecionado = st.selectbox("Mês", opcoes_mes)
 
-            df_filtrado = df_debitos[(df_debitos['categoria'] == categoria) & (df_debitos['ano'] == ano)]
+            df_filtrado = df_debitos[df_debitos['categoria'] == categoria]
+            if ano != "Todos os anos":
+                df_filtrado = df_filtrado[df_filtrado['ano'] == ano]
             if mes_selecionado != "Todos os meses":
                 df_filtrado = df_filtrado[df_filtrado['mes'] == int(mes_selecionado)]
 
@@ -196,14 +201,15 @@ elif menu == "Gráfico":
 
         st.subheader("Totais por Categoria (por Mês)")
         tipo = st.selectbox("Tipo", ["Débito", "Crédito"], key="tipo_graf")
-        df_tipo = df[df['tipo'] == tipo]
+        anos_tipo = sorted(df['ano'].unique())
+        ano_cat = st.selectbox("Ano", anos_tipo, index=anos_tipo.index(ano_atual) if ano_atual in anos_tipo else 0, key="ano_categoria")
+
+        df_tipo = df[(df['tipo'] == tipo) & (df['ano'] == ano_cat)]
         categorias = df_tipo['categoria'].unique()
         cat_sel = st.selectbox("Categoria", sorted(categorias))
         df_cat = df_tipo[df_tipo['categoria'] == cat_sel]
         total_mes = df_cat.groupby('mes_nome')['valor'].sum().reindex(meses_ordem).fillna(0).reset_index(name="Total")
-        fig2 = px.bar(total_mes, x='mes_nome', y='Total', text_auto='.2f', title=f"{cat_sel} - {tipo} por Mês")
+        fig2 = px.bar(total_mes, x='mes_nome', y='Total', text_auto='.2f', title=f"{cat_sel} - {tipo} por Mês em {ano_cat}")
         st.plotly_chart(fig2, use_container_width=True)
     else:
         st.info("Nenhum dado cadastrado ainda.")
-
-#streamlit run financas.py
