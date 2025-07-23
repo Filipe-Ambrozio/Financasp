@@ -1,1 +1,17 @@
-digite o texto
+cd - ir para pastra - "cd nome da pastra"
+dir - mostra
+rd .git /s/q - apagar arquivi git na pasta 
+git init - íniciar cria um repositorio local
+git status
+git add . - adicionar o arquivo
+git commit -m "nome" - comitar o arquivo
+git remote add origin + linck do git da pasta do arquivo - adicionar o link
+git breach -m main
+git push -u origin master - enviar arquivo para o repositorio
+
+---------------------------------------- para atualizar
+
+git add . - adicionar o arquivo
+git commit -m "nome" - comitar o arquivo
+git push
+git status
