@@ -1,0 +1,5 @@
+streamlit
+pandas
+plotly
+requests
+openpyxl # Provavelmente você precisará disso para o pandas ler arquivos .xlsx
